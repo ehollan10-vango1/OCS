@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Federal Sector Coverage — Interactive Venn</title>
+
+<!-- Fonts -->
+https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap
+
+<style>
+  :root{
+    --bg:#040C1A; --panel:#060E1C; --border:#0D2035; --grid:#0B1E32;
+    --text:#94A3B8; --muted:#2D4A6A; --title:#E5E7EB;
+
+    --fc:#FCD34D; --dod:#93C5FD; --ic:#6EE7B7;
+    --fc_dod:#C4B5FD; --fc_ic:#FCA5A5; --dod_ic:#7DD3FC; --all:#F1F5F9;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; font-family:'DM Sans',system-ui,sans-serif; color:var(--text);
+    background:linear-gradient(180deg,#030A16,#0A1A2E);
+  }
+  .page{padding:28px; display:flex; flex-direction:column; align-items:center; gap:22px}
+  .header{text-align:center}
+  .header h1{
+    margin:0; font-family:'Bebas Neue',sans-serif; letter-spacing:.20em; font-size:40px; color:var(--title)
+  }
+  .header .subtitle{margin-top:6px; font-size:12px; letter-spacing:.14em; color:var(--muted)}
+  .layout{display:flex; gap:16px; width:100%; max-width:1140px; align-items:flex-start}
+  .left{flex:1; min-width:0; background:rgba(7,17,31,.96); border-radius:16px; padding:12px}
+  .right{width:282px; flex-shrink:0; background:var(--panel); border:1px solid var(--border); border-radius:16px; padding:12px; display:flex; flex-direction:column}
+  svg{width:100%; height:auto; display:block}
+
+  /* Side panel states */
+  .regions-title{font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:var(--muted); margin:6px 0 10px}
+  .region-row{display:flex; align-items:center; gap:8px; padding:6px 6px; border-radius:8px; cursor:pointer}
+  .region-row:hover{background:rgba(255,255,255,.04)}
+  .dot{width:8px; height:8px; border-radius:50%}
+
+  .pill{display:inline-flex; align-items:center; gap:8px; border-radius:10px; padding:6px 8px}
+  .back{background:none; border:none; color:#1E3A5F; cursor:pointer; font-weight:500}
+  .input-row{display:flex; gap:8px; margin-top:10px}
+  .input-row input{
+    flex:1; background:#040C1A; border:1px solid rgba(255,255,255,.08);
+    border-radius:10px; color:var(--text); padding:8px 10px
+  }
+  .input-row button{
+    border:none; border-radius:10px; padding:8px 12px; cursor:pointer; color:#040C1A; font-weight:600
+  }
+  .list{flex:1; overflow:auto; display:flex; flex-direction:column; gap:8px; margin-top:10px}
+  .item{display:flex; gap:8px; background:#071121; border:1px solid var(--border); border-radius:10px; padding:8px}
+  .item .del{background:none; border:none; color:#1E3A5F; cursor:pointer}
+
+  .jump{border-top:1px solid var(--border); padding-top:12px; margin-top:2px}
+  .jump .label{font-size:10px; letter-spacing:.12em; text-transform:uppercase; color:var(--muted); margin-bottom:6px}
+  .chips{display:flex; flex-wrap:wrap; gap:6px}
+  .chip{
+    border-radius:999px; padding:4px 8px; font-size:11px; cursor:pointer; background:transparent;
+    border:1px solid rgba(255,255,255,.08)
+  }
+
+  /* Hotspot animation (selected pulse) */
+  @keyframes pulse { from{transform:scale(.98)} to{transform:scale(1.02)} }
+  .pulse { animation: pulse 1.2s ease-in-out infinite alternate; transform-origin:center }
+</style>
+</head>
+
+<body>
+<div class="page">
+  <div class="header">
+    <h1>FEDERAL SECTOR COVERAGE</h1>
+    <div class="subtitle">CLICK ANY REGION TO ADD CONTENT</div>
+  </div>
+
+  <div class="layout">
+    <div class="left">
+      <svg id="venn" viewBox="0 0 800 570" aria-label="Interactive Venn diagram">
+        <defs>
+          <pattern id="grid" width="36" height="36" patternUnits="userSpaceOnUse">
+            <path d="M 36 0 L 0 0 0 36" fill="none" stroke="#0B1E32" stroke-width="0.7"/>
+          </pattern>
+          <radialGradient id="rfc" cx="35%" cy="35%">
+            <stop offset="0%" stop-color="var(--fc)" stop-opacity="0.85"/>
+            <stop offset="100%" stop-color="var(--fc)" stop-opacity="0.20"/>
+          </radialGradient>
+          <radialGradient id="rdod" cx="65%" cy="35%">
+            <stop offset="0%" stop-color="var(--dod)" stop-opacity="0.85"/>
+            <stop offset="100%" stop-color="var(--dod)" stop-opacity="0.20"/>
+          </radialGradient>
+          <radialGradient id="ric" cx="50%" cy="70%">
+            <stop offset="0%" stop-color="var(--ic)" stop-opacity="0.85"/>
+            <stop offset="100%" stop-color="var(--ic)" stop-opacity="0.20"/>
+          </radialGradient>
+        </defs>
+
+        <!-- backdrop + grid -->
+        <rect width="800" height="570" fill="var(--bg)"></rect>
+        <rect width="800" height="570" fill="url(#grid)"></rect>
+
+        <!-- soft glow -->
+        <circle cx="265" cy="200" r="185" fill="var(--fc)" opacity="0.06"></circle>
+        <circle cx="535" cy="200" r="185" fill="var(--dod)" opacity="0.06"></circle>
+        <circle cx="400" cy="378" r="185" fill="var(--ic)"  opacity="0.06"></circle>
+
+        <!-- main circles -->
+        <circle id="c-fc"  cx="265" cy="200" r="155" fill="url(#rfc)"  stroke="#1C2F45" stroke-width="1.2"></circle>
+        <circle id="c-dod" cx="535" cy="200" r="155" fill="url(#rdod)" stroke="#1C2F45" stroke-width="1.2"></circle>
+        <circle id="c-ic"  cx="400" cy="378" r="155" fill="url(#ric)"  stroke="#1C2F45" stroke-width="1.2"></circle>
+
+        <!-- hover overlay goes here -->
+        <g id="hover-overlay"></g>
+
+        <!-- labels -->
+        <text x="178" y="62"  text-anchor="middle" fill="var(--fc)"  font-size="16" font-family="Bebas Neue">FED CIV</text>
+        <text x="622" y="62"  text-anchor="middle" fill="var(--dod)" font-size="16" font-family="Bebas Neue">DOD</text>
+        <text x="400" y="553" text-anchor="middle" fill="var(--ic)"  font-size="16" font-family="Bebas Neue">IC</text>
+
+        <!-- intersection micro labels -->
+        <text x="400" y="130" text-anchor="middle" fill="var(--fc_dod)" font-size="9" font-family="DM Sans">FED CIV ∩ DOD</text>
+        <text x="266" y="360" text-anchor="middle" fill="var(--fc_ic)"  font-size="9" font-family="DM Sans">FED CIV ∩ IC</text>
+        <text x="534" y="360" text-anchor="middle" fill="var(--dod_ic)" font-size="9" font-family="DM Sans">DOD ∩ IC</text>
+        <text x="400" y="276" text-anchor="middle" fill="var(--all)"    font-size="9" font-family="DM Sans">ALL THREE</text>
+
+        <!-- hotspot layer -->
+        <g id="hotspots"></g>
+      </svg>
+    </div>
+
+    <!-- side panel -->
+    <div class="right" id="panel"></div>
+  </div>
+</div>
+
+<script>
+  // Geometry + meta
+  const R = 155;
+  const CENTERS = { fc:[265,200], dod:[535,200], ic:[400,378] };
+  const HOTSPOTS = {
+    fc:[165,200], dod:[635,200], ic:[400,482],
+    fc_dod:[400,140], fc_ic:[280,345], dod_ic:[520,345], all:[400,260]
+  };
+  const META = {
+    fc:     { name:"FED CIV",       sub:"Federal Civilian Exclusive",         color:getVar('--fc') },
+    dod:    { name:"DOD",           sub:"Defense Exclusive",                  color:getVar('--dod') },
+    ic:     { name:"IC",            sub:"Intel Community Exclusive",          color:getVar('--ic') },
+    fc_dod: { name:"FED CIV ∩ DOD", sub:"Shared: Civilian & Defense",         color:getVar('--fc_dod') },
+    fc_ic:  { name:"FED CIV ∩ IC",  sub:"Shared: Civilian & Intelligence",    color:getVar('--fc_ic') },
+    dod_ic: { name:"DOD ∩ IC",      sub:"Shared: Defense & Intelligence",     color:getVar('--dod_ic') },
+    all:    { name:"ALL THREE",     sub:"Common to FED CIV, DOD & IC",        color:getVar('--all') },
+  };
+
+  // State
+  const content = Object.fromEntries(Object.keys(META).map(k => [k, []]));
+  let selected = null;
+  let hovered = null;
+
+  // DOM refs
+  const svg = document.getElementById('venn');
+  const hoverOverlay = document.getElementById('hover-overlay');
+  const hotspotsEl = document.getElementById('hotspots');
+  const panel = document.getElementById('panel');
+
+  // Build hotspots
+  for (const [key, [hx, hy]] of Object.entries(HOTSPOTS)) {
+    const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+    g.setAttribute('data-key', key);
+
+    const ring = circle(hx, hy, 16, { fill: META[key].color, opacity: 0.12 });
+    ring.style.display = 'none'; ring.classList.add('pulse');
+    const dot  = circle(hx, hy, 6,  { fill: hexA(META[key].color, 0.33), stroke: META[key].color, 'stroke-width': 1 });
+    const num  = text(hx, hy + 3.5, '0', { fill:'#040C1A', 'font-size': 10, 'text-anchor':'middle', 'font-family': 'DM Sans' });
+    num.style.display = 'none';
+
+    g.appendChild(ring); g.appendChild(dot); g.appendChild(num);
+    hotspotsEl.appendChild(g);
+  }
+
+  // Interaction
+  svg.addEventListener('mousemove', (e) => {
+    const [x, y] = svgCoords(e);
+    hovered = getRegion(x, y);
+    drawHover();
+    setCursor(!!hovered);
+  });
+  svg.addEventListener('mouseleave', () => {
+    hovered = null;
+    drawHover();
+    setCursor(false);
+  });
+  svg.addEventListener('click', (e) => {
+    const [x, y] = svgCoords(e);
+    const r = getRegion(x, y);
+    if (r) { selected = r; renderPanel(); renderHotspots(); }
+  });
+
+  // Initial UI
+  renderPanel();
+  renderHotspots();
+
+  /* ---------- Helpers ---------- */
+  function svgCoords(e){
+    const rect = svg.getBoundingClientRect();
+    const scaleX = 800 / rect.width, scaleY = 570 / rect.height;
+    return [ (e.clientX - rect.left) * scaleX, (e.clientY - rect.top) * scaleY ];
+  }
+  function getRegion(x, y){
+    const inFc  = inCircle(x, y, ...CENTERS.fc,  R);
+    const inDod = inCircle(x, y, ...CENTERS.dod, R);
+    const inIc  = inCircle(x, y, ...CENTERS.ic,  R);
+    if (inFc && inDod && inIc) return 'all';
+    if (inFc && inDod) return 'fc_dod';
+    if (inFc && inIc)  return 'fc_ic';
+    if (inDod && inIc) return 'dod_ic';
+    if (inFc)  return 'fc';
+    if (inDod) return 'dod';
+    if (inIc)  return 'ic';
+    return null;
+  }
+  function inCircle(x, y, cx, cy, r){ return (x-cx)**2 + (y-cy)**2 <= r*r; }
+  function drawHover(){
+    hoverOverlay.innerHTML = '';
+    if (!hovered) return;
+    const fcIn  = ['fc','fc_dod','fc_ic','all'].includes(hovered);
+    const dodIn = ['dod','fc_dod','dod_ic','all'].includes(hovered);
+    const icIn  = ['ic','fc_ic','dod_ic','all'].includes(hovered);
+
+    if (fcIn)  hoverOverlay.appendChild(circle(...CENTERS.fc,  R, { fill:getVar('--fc'),  opacity:.12 }));
+    if (dodIn) hoverOverlay.appendChild(circle(...CENTERS.dod, R, { fill:getVar('--dod'), opacity:.12 }));
+    if (icIn)  hoverOverlay.appendChild(circle(...CENTERS.ic,  R, { fill:getVar('--ic'),  opacity:.12 }));
+  }
+  function setCursor(pointy){ svg.style.cursor = pointy ? 'pointer' : 'default'; }
+
+  function renderHotspots(){
+    for (const g of hotspotsEl.querySelectorAll('g')) {
+      const key = g.getAttribute('data-key');
+      const ring = g.children[0], dot = g.children[1], num = g.children[2];
+
+      const isSel = selected === key;
+      const isHov = hovered === key;
+
+      ring.style.display = isSel ? 'block' : 'none';
+      dot.setAttribute('r', isSel ? 10 : isHov ? 9 : 6);
+      dot.setAttribute('fill', isSel ? META[key].color : isHov ? hexA(META[key].color, .73) : hexA(META[key].color, .33));
+      dot.setAttribute('stroke', META[key].color);
+      dot.setAttribute('stroke-width', isSel ? 1.5 : 1);
+
+      const count = content[key].length;
+      num.textContent = count;
+      num.style.display = count > 0 ? 'block' : 'none';
+    }
+  }
+
+  function renderPanel(){
+    panel.innerHTML = '';
+    if (!selected) {
+      // default state: Region list
+      const top = el('div', {}, [
+        el('p', { class:'regions-title' }, ['REGIONS']),
+        ...Object.entries(META).map(([key,meta]) =>
+          el('div', { class:'region-row', onclick: () => { selected = key; renderPanel(); renderHotspots(); } }, [
+            el('span', { class:'dot', style:`background:${meta.color}` }),
+            el('span', { style:'font-size:11px; color:#2D4A6A; flex:1' }, [meta.name]),
+            content[key].length ? el('span', { style:`font-size:10px; color:${meta.color}` }, [String(content[key].length)]) : null
+          ])
+        )
+      ]);
+      panel.appendChild(top);
+      return;
+    }
+
+    const sel = META[selected];
+
+    // header pill + back
+    const header = el('div', {}, [
+      el('div', { class:'pill', style:`background:${hexA(sel.color,.10)}; border:1px solid ${hexA(sel.color,.25)}` }, [
+        el('span', { style:`color:${sel.color}; font-size:12px; font-weight:600; letter-spacing:.08em` }, [sel.name])
+      ]),
+      el('button', { class:'back', style:'float:right', onclick: () => { selected = null; renderPanel(); renderHotspots(); } }, ['Back']),
+      el('p', { style:'color:#1E3A5F; font-size:11px; margin:0; clear:both' }, [sel.sub])
+    ]);
+
+    // input row
+    const input = el('input', { placeholder:'Add item, press Enter...' });
+    input.addEventListener('keydown', (e) => { if (e.key === 'Enter') addItem(input); });
+    const addBtn = el('button', { style:`background:${sel.color}`, onclick: () => addItem(input) }, ['Add']);
+    const inputRow = el('div', { class:'input-row' }, [input, addBtn]);
+
+    // list
+    const listWrap = el('div', { class:'list' }, [
+      content[selected].length === 0
+        ? el('p', { style:'color:#0D2035; font-size:13px; text-align:center; margin-top:12px' }, ['No items yet.'])
+        : el('div', {}, content[selected].map((item, i) =>
+            el('div', { class:'item' }, [
+              el('span', { style:'flex:1; font-size:13px; color:#94A3B8; word-break:break-word' }, [item]),
+              el('button', { class:'del', onclick: () => {
+                content[selected].splice(i,1);
+                renderPanel(); renderHotspots();
+              } }, ['✕'])
+            ])
+          ))
+    ]);
+
+    // jump chips
+    const jump = el('div', { class:'jump' }, [
+      el('p', { class:'label' }, ['Jump to']),
+      el('div', { class:'chips' }, Object.entries(META).map(([key,meta]) =>
+        el('button', {
+          class:'chip',
+          style:`color:${meta.color}; border-color:${hexA(meta.color,.2)}; background:${key===selected ? hexA(meta.color,.10) : 'transparent'}`,
+          onclick: () => { selected = key; renderPanel(); renderHotspots(); }
+        }, [`${meta.name}${content[key].length ? ' · ' + content[key].length : ''}`])
+      ))
+    ]);
+
+    panel.append(header, inputRow, listWrap, jump);
+    input.focus();
+  }
+
+  function addItem(inputEl){
+    const val = (inputEl.value || '').trim();
+    if (!val || !selected) return;
+    content[selected].push(val);
+    inputEl.value = '';
+    renderPanel(); renderHotspots();
+  }
+
+  /* ---------- tiny DOM/SVG helpers ---------- */
+  function el(tag, attrs={}, kids=[]){
+    const n = document.createElement(tag);
+    for (const [k,v] of Object.entries(attrs||{})){
+      if (k === 'style') n.setAttribute('style', v);
+      else if (k === 'class') n.setAttribute('class', v);
+      else if (k.startsWith('on')) n[k] = v;
+      else n.setAttribute(k, v);
+    }
+    for (const kid of kids) if (kid) n.append(kid);
+    return n;
+  }
+  function circle(cx, cy, r, attrs={}){
+    const c = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    c.setAttribute('cx', cx); c.setAttribute('cy', cy); c.setAttribute('r', r);
+    for (const [k,v] of Object.entries(attrs||{})) c.setAttribute(k, v);
+    return c;
+  }
+  function text(x, y, t, attrs={}){
+    const n = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    n.setAttribute('x', x); n.setAttribute('y', y); n.textContent = t;
+    for (const [k,v] of Object.entries(attrs||{})) n.setAttribute(k, v);
+    return n;
+  }
+  function getVar(name){ return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
+  function hexA(hex, alpha){
+    // Accepts #RRGGBB and returns rgba(...)
+    const r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+  }
+</script>
+</body>
+</html>
